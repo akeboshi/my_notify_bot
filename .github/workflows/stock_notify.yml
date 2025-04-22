@@ -27,4 +27,4 @@ jobs:
       - name: Run script # Pythonスクリプトを実行
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # SecretsからWebhook URLを環境変数に設定
-        run: python stock_notifier.py
+        run: python stock_notifer.py
