@@ -8,6 +8,8 @@ import pytz # タイムゾーンの処理に必要
 # --- 設定 ---
 TARGET_URL = "https://kabutan.jp/stock/?code=2175" # 取得したい株価のURL
 SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL") # 環境変数からWebhook URLを取得
+SLACK_BOT_NAME = "やる気スイッチ" # ここで名前を指定
+SLACK_BOT_ICON = ":money_mouth_face:" # ここでアイコン絵文字を指定 (または SLACK_BOT_ICON_URL = "画像のURL")
 
 # CSSセレクター
 NAME_SELECTOR = "#stockinfo_i1 > div.si_i1_1 > h2"
@@ -37,14 +39,24 @@ def extract_data(soup, selector):
         return "取得失敗" # 要素が見つからない場合
 
 def send_slack_notification(message):
-    """Slackにメッセージを送信する"""
+    """Slackにメッセージを送信する (名前とアイコンを指定)"""
     if not SLACK_WEBHOOK_URL:
         print("Error: Slack Webhook URL is not set.", file=sys.stderr)
         return False
 
     payload = {
-        "text": message
+        "text": message,
+        "username": SLACK_BOT_NAME,      # 投稿者名を設定
+        "icon_emoji": SLACK_BOT_ICON,  # アイコン絵文字を設定 (どちらか一方)
+        # "icon_url": "https://example.com/icon.png" # アイコンURLを設定 (どちらか一方、実際のURLに置き換えてください)
     }
+
+    # icon_emoji を使いたい場合は、icon_urlの行をコメントアウトしてください
+    # if SLACK_BOT_ICON and "icon_url" not in payload: # icon_url が指定されていない場合のみ icon_emoji を使う
+    #     payload["icon_emoji"] = SLACK_BOT_ICON
+
+    print(f"Sending payload: {payload}") # 送信するペイロード全体をログに出力
+
     try:
         response = requests.post(SLACK_WEBHOOK_URL, json=payload, timeout=10)
         response.raise_for_status()
@@ -52,8 +64,9 @@ def send_slack_notification(message):
         return True
     except requests.exceptions.RequestException as e:
         print(f"Error sending notification to Slack: {e}", file=sys.stderr)
-        print(f"Response status code: {response.status_code}", file=sys.stderr)
-        print(f"Response text: {response.text}", file=sys.stderr)
+        if response is not None: # responseオブジェクトが存在すれば詳細を出力
+            print(f"Response status code: {response.status_code}", file=sys.stderr)
+            print(f"Response text: {response.text}", file=sys.stderr)
         return False
 
 if __name__ == "__main__":
